@@ -2,6 +2,10 @@ package com.app.playerservicejava.model;
 
 import jakarta.persistence.*;
 
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.Period;
+
 @Entity
 @Table(name="PLAYERS")
 public class Player {
@@ -272,5 +276,69 @@ public class Player {
 
     public void setBbrefId(String bbrefId) {
         this.bbrefId = bbrefId;
+    }
+
+    /**
+     * Calculates the player's age today, or their age on their date of death.
+     *
+     * @return the player's age in completed years, or {@code null} when the
+     * birth date or applicable death date is incomplete or invalid
+     */
+    @Transient
+    public Integer getAge() {
+        return calculateAge(LocalDate.now());
+    }
+
+    /**
+     * Calculates the player's age relative to the supplied date.
+     *
+     * @param currentDate the date to use for a living player
+     * @return the player's age in completed years, or {@code null} when the
+     * required date values cannot form valid dates
+     */
+    Integer calculateAge(LocalDate currentDate) {
+        LocalDate birthDate = parseDate(birthYear, birthMonth, birthDay);
+        if (birthDate == null) {
+            return null;
+        }
+
+        // A deceased player's age stops increasing on their date of death.
+        LocalDate ageCalculationDate;
+        if (deathYear == null || deathYear.isBlank()) {
+            ageCalculationDate = currentDate;
+        } else {
+            ageCalculationDate = parseDate(deathYear, deathMonth, deathDay);
+            if (ageCalculationDate == null) {
+                return null;
+            }
+        }
+
+        // Reject inconsistent records instead of returning a negative age.
+        if (ageCalculationDate.isBefore(birthDate)) {
+            return null;
+        }
+
+        return Period.between(birthDate, ageCalculationDate).getYears();
+    }
+
+    /**
+     * Converts the separate database date fields into a date when all values
+     * are present and valid.
+     */
+    private LocalDate parseDate(String year, String month, String day) {
+        if (year == null || year.isBlank()
+                || month == null || month.isBlank()
+                || day == null || day.isBlank()) {
+            return null;
+        }
+
+        try {
+            return LocalDate.of(
+                    Integer.parseInt(year),
+                    Integer.parseInt(month),
+                    Integer.parseInt(day));
+        } catch (DateTimeException | NumberFormatException invalidDate) {
+            return null;
+        }
     }
 }

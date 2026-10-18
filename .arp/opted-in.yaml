@@ -1,0 +1,7 @@
+consentStatus: awaiting
+capabilityIds: []
+consentChallenge:
+  id: ec4851c1-878b-4fc9-9927-2f6143d21352
+  version: 1
+  createdAt: '2026-10-18T19:35:20.928Z'
+  disclosureVersion: 1.3.0
