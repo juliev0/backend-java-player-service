@@ -20,14 +20,17 @@ public class PlayerController {
     private PlayerService playerService;
 
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<Players> getPlayers() {
-        Players players = playerService.getPlayers();
+    public ResponseEntity<Players> getPlayers(
+            @RequestParam(name = "isAdmin", defaultValue = "false") boolean isAdmin) {
+        Players players = playerService.getPlayers(isAdmin);
         return ok(players);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Player> getPlayerById(@PathVariable("id") String id) {
-        Optional<Player> player = playerService.getPlayerById(id);
+    public ResponseEntity<Player> getPlayerById(
+            @PathVariable("id") String id,
+            @RequestParam(name = "isAdmin", defaultValue = "false") boolean isAdmin) {
+        Optional<Player> player = playerService.getPlayerById(id, isAdmin);
 
         if (player.isPresent()) {
             return new ResponseEntity<>(player.get(), HttpStatus.OK);
