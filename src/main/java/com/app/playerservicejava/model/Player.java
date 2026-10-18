@@ -80,6 +80,9 @@ public class Player {
     @Column(name = "BBREFID")
     private String bbrefId;
 
+    @Transient
+    private Integer age;
+
     public Player() {}
 
     public String getPlayerId() {
@@ -272,5 +275,13 @@ public class Player {
 
     public void setBbrefId(String bbrefId) {
         this.bbrefId = bbrefId;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
     }
 }
