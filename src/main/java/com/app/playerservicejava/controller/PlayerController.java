@@ -1,5 +1,8 @@
 package com.app.playerservicejava.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.app.playerservicejava.model.Player;
 import com.app.playerservicejava.model.Players;
 import com.app.playerservicejava.service.PlayerService;
@@ -19,20 +22,47 @@ public class PlayerController {
     @Resource
     private PlayerService playerService;
 
+    @Resource
+    private ObjectMapper objectMapper;
+
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<Players> getPlayers() {
+    public ResponseEntity<ObjectNode> getPlayers() {
         Players players = playerService.getPlayers();
-        return ok(players);
+        ObjectNode response = objectMapper.createObjectNode();
+        ArrayNode playerResponses = response.putArray("players");
+
+        // Preserve the collection response shape while enriching each player.
+        players.getPlayers().stream()
+                .map(this::createPlayerResponse)
+                .forEach(playerResponses::add);
+
+        return ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Player> getPlayerById(@PathVariable("id") String id) {
+    public ResponseEntity<ObjectNode> getPlayerById(@PathVariable("id") String id) {
         Optional<Player> player = playerService.getPlayerById(id);
 
         if (player.isPresent()) {
-            return new ResponseEntity<>(player.get(), HttpStatus.OK);
+            return new ResponseEntity<>(createPlayerResponse(player.get()), HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+    }
+
+    /**
+     * Converts a player to JSON and adds the calculated age property.
+     */
+    private ObjectNode createPlayerResponse(Player player) {
+        ObjectNode playerResponse = objectMapper.valueToTree(player);
+        Integer age = playerService.calculateAge(player);
+
+        if (age == null) {
+            playerResponse.putNull("age");
+        } else {
+            playerResponse.put("age", age);
+        }
+
+        return playerResponse;
     }
 }
