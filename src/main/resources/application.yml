@@ -16,7 +16,7 @@ spring:
     type: caffeine
     cache-names: playersById
     caffeine:
-      spec: maximumSize=25000,expireAfterAccess=1h
+      spec: maximumSize=25000,expireAfterWrite=1h
   h2:
     console:
       enabled: true

@@ -6,6 +6,7 @@ import com.app.playerservicejava.repository.PlayerRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -42,6 +43,14 @@ public class PlayerService {
             return Optional.empty();
         }
         return player;
+    }
+
+    /**
+     * Saves updated player data and removes the previous value from the cache.
+     */
+    @CacheEvict(cacheNames = "playersById", key = "#player.playerId")
+    public Player updatePlayer(Player player) {
+        return playerRepository.save(player);
     }
 
 }

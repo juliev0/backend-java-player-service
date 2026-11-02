@@ -15,6 +15,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import java.lang.reflect.Proxy;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,6 +32,9 @@ class PlayerServiceCachingTest {
     @Autowired
     private AtomicInteger repositoryLookupCount;
 
+    @Autowired
+    private AtomicReference<Player> storedPlayer;
+
     /**
      * Clears shared test state before each cache behavior test.
      */
@@ -38,6 +42,11 @@ class PlayerServiceCachingTest {
     void setUp() {
         repositoryLookupCount.set(0);
         cacheManager.getCache("playersById").clear();
+
+        Player player = new Player();
+        player.setPlayerId("player-1");
+        player.setFirstName("Original");
+        storedPlayer.set(player);
     }
 
     /**
@@ -52,6 +61,25 @@ class PlayerServiceCachingTest {
         assertTrue(cachedResult.isPresent());
         assertEquals("player-1", cachedResult.get().getPlayerId());
         assertEquals(1, repositoryLookupCount.get());
+    }
+
+    /**
+     * Verifies that an update evicts the cached player before the next read.
+     */
+    @Test
+    void evictsCachedPlayerAfterUpdate() {
+        playerService.getPlayerById("player-1");
+
+        Player updatedPlayer = new Player();
+        updatedPlayer.setPlayerId("player-1");
+        updatedPlayer.setFirstName("Updated");
+        playerService.updatePlayer(updatedPlayer);
+
+        Optional<Player> refreshedResult = playerService.getPlayerById("player-1");
+
+        assertTrue(refreshedResult.isPresent());
+        assertEquals("Updated", refreshedResult.get().getFirstName());
+        assertEquals(2, repositoryLookupCount.get());
     }
 
     /**
@@ -77,11 +105,18 @@ class PlayerServiceCachingTest {
             return new AtomicInteger();
         }
 
+        @Bean
+        AtomicReference<Player> storedPlayer() {
+            return new AtomicReference<>();
+        }
+
         /**
          * Creates a repository proxy that counts player lookups.
          */
         @Bean
-        PlayerRepository playerRepository(AtomicInteger repositoryLookupCount) {
+        PlayerRepository playerRepository(
+                AtomicInteger repositoryLookupCount,
+                AtomicReference<Player> storedPlayer) {
             return (PlayerRepository) Proxy.newProxyInstance(
                     PlayerRepository.class.getClassLoader(),
                     new Class<?>[]{PlayerRepository.class},
@@ -96,15 +131,19 @@ class PlayerServiceCachingTest {
                         if (method.getName().equals("toString")) {
                             return "CountingPlayerRepository";
                         }
-                        if (!method.getName().equals("findById")) {
-                            throw new UnsupportedOperationException(
-                                    "Unexpected repository method: " + method.getName());
+                        if (method.getName().equals("findById")) {
+                            repositoryLookupCount.incrementAndGet();
+                            return Optional.ofNullable(storedPlayer.get());
+                        }
+                        if (method.getName().equals("save")) {
+                            Player updatedPlayer = (Player) arguments[0];
+                            storedPlayer.set(updatedPlayer);
+                            return updatedPlayer;
                         }
 
-                        repositoryLookupCount.incrementAndGet();
-                        Player player = new Player();
-                        player.setPlayerId((String) arguments[0]);
-                        return Optional.of(player);
+                        throw new UnsupportedOperationException(
+                                "Unexpected repository method: " + method.getName());
+
                     });
         }
     }
