@@ -1,5 +1,7 @@
 package com.app.playerservicejava.controller;
 
+import com.app.playerservicejava.dto.PlayerResponse;
+import com.app.playerservicejava.dto.PlayersResponse;
 import com.app.playerservicejava.model.Player;
 import com.app.playerservicejava.model.Players;
 import com.app.playerservicejava.service.PlayerService;
@@ -20,17 +22,17 @@ public class PlayerController {
     private PlayerService playerService;
 
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<Players> getPlayers() {
+    public ResponseEntity<PlayersResponse> getPlayers() {
         Players players = playerService.getPlayers();
-        return ok(players);
+        return ok(PlayersResponse.from(players));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Player> getPlayerById(@PathVariable("id") String id) {
+    public ResponseEntity<PlayerResponse> getPlayerById(@PathVariable("id") String id) {
         Optional<Player> player = playerService.getPlayerById(id);
 
         if (player.isPresent()) {
-            return new ResponseEntity<>(player.get(), HttpStatus.OK);
+            return new ResponseEntity<>(PlayerResponse.from(player.get()), HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
