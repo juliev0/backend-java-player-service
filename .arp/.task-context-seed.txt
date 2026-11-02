@@ -1,0 +1,1 @@
+I have a branch that I added called isAdmin in $GOPATH/src/github.com/Intuit-A4A/backend-java-player-service. I actually want to move that over to this fork instead
