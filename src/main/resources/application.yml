@@ -12,6 +12,11 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
   config:
     use-legacy-processing: true
+  cache:
+    type: caffeine
+    cache-names: playersById
+    caffeine:
+      spec: maximumSize=25000,expireAfterAccess=1h
   h2:
     console:
       enabled: true

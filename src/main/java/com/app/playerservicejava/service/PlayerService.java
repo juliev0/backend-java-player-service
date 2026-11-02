@@ -6,6 +6,7 @@ import com.app.playerservicejava.repository.PlayerRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -24,6 +25,11 @@ public class PlayerService {
         return players;
     }
 
+    /**
+     * Returns a player and caches successful lookups to avoid repeating the
+     * delayed repository call.
+     */
+    @Cacheable(cacheNames = "playersById", key = "#playerId", unless = "#result == null")
     public Optional<Player> getPlayerById(String playerId) {
         Optional<Player> player = null;
 
