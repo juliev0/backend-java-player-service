@@ -1,5 +1,6 @@
 package com.app.playerservicejava.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 
 @Entity
@@ -50,6 +51,7 @@ public class Player {
     @Column(name = "NAMEFIRST")
     private String firstName;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Column(name = "NAMELAST")
     private String lastName;
 
