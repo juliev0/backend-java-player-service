@@ -41,4 +41,31 @@ public class ChatClientService {
         return response.getResponse();
     }
 
+    // Asks the language model for a short nickname for a soccer player from the given country,
+    // then cleans up the model's reply so only the nickname itself is returned.
+    public String generateNickname(String country) throws OllamaBaseException, IOException, InterruptedException {
+        String model = OllamaModelType.TINYLLAMA;
+
+        // build a prompt that asks for the nickname only, with no extra commentary
+        PromptBuilder promptBuilder =
+                new PromptBuilder()
+                        .addLine("Generate one short, fun nickname for a soccer player from " + country + ".")
+                        .addLine("Reply with only the nickname and nothing else.");
+
+        // use a moderate temperature so nicknames stay varied but reasonably focused
+        boolean raw = false;
+        OllamaResult response = ollamaAPI.generate(
+                model, promptBuilder.build(), raw, new OptionsBuilder().setTemperature(0.7f).build());
+
+        // small models often add extra lines, so keep only the first non-empty line
+        String firstLine = response.getResponse().trim().lines()
+                .map(String::trim)
+                .filter(line -> !line.isEmpty())
+                .findFirst()
+                .orElse("");
+
+        // remove surrounding quotes and asterisks the model may wrap around the nickname
+        return firstLine.replaceAll("^[\"'*\\s]+|[\"'*\\s]+$", "");
+    }
+
 }
