@@ -1,5 +1,6 @@
 package com.app.playerservicejava.controller.chat;
 
+import com.app.playerservicejava.security.AuthGuard;
 import com.app.playerservicejava.service.chat.ChatClientService;
 import io.github.ollama4j.exceptions.OllamaBaseException;
 import io.github.ollama4j.models.Model;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -20,6 +22,7 @@ import java.net.ConnectException;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Controller
 @RequestMapping(value = "v1/chat", produces = { MediaType.APPLICATION_JSON_VALUE })
@@ -31,7 +34,13 @@ public class ChatController {
     private ChatClientService chatClientService;
 
     @PostMapping
-    public ResponseEntity<?> chat() {
+    public ResponseEntity<?> chat(@RequestHeader(value = "Authorization", required = false) String authorization) {
+        // reject the request early if the password is missing or wrong
+        Optional<ResponseEntity<Object>> rejection = AuthGuard.rejectIfUnauthorized(authorization);
+        if (rejection.isPresent()) {
+            return rejection.get();
+        }
+
         try {
             return ResponseEntity.ok(chatClientService.chat());
         } catch (ConnectException exc) {
@@ -42,7 +51,13 @@ public class ChatController {
     }
 
     @GetMapping("/list-models")
-    public ResponseEntity<?> listModels() {
+    public ResponseEntity<?> listModels(@RequestHeader(value = "Authorization", required = false) String authorization) {
+        // reject the request early if the password is missing or wrong
+        Optional<ResponseEntity<Object>> rejection = AuthGuard.rejectIfUnauthorized(authorization);
+        if (rejection.isPresent()) {
+            return rejection.get();
+        }
+
         try {
             List<Model> models = chatClientService.listModels();
             return ResponseEntity.ok(models);
