@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.IOException;
@@ -27,6 +28,8 @@ public class ChatController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChatController.class);
 
+    private static final int MAX_COUNTRY_LENGTH = 56;
+
     @Autowired
     private ChatClientService chatClientService;
 
@@ -38,6 +41,25 @@ public class ChatController {
             return ollamaUnavailable("Ollama chat failed. Ensure tinyllama is pulled and Ollama is running on port 11434.", exc);
         } catch (OllamaBaseException | IOException | InterruptedException exc) {
             return ollamaUnavailable("Ollama chat failed.", exc);
+        }
+    }
+
+    // Returns a generated nickname for a player from the requested country.
+    @GetMapping("/nickname")
+    public ResponseEntity<?> nickname(@RequestParam("country") String country) {
+        // reject missing or overly long input, since it is placed directly into the prompt
+        if (country == null || country.isBlank() || country.length() > MAX_COUNTRY_LENGTH) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "country must be non-blank and at most " + MAX_COUNTRY_LENGTH + " characters."));
+        }
+
+        try {
+            String nickname = chatClientService.generateNickname(country.trim());
+            return ResponseEntity.ok(Map.of("country", country.trim(), "nickname", nickname));
+        } catch (ConnectException exc) {
+            return ollamaUnavailable("Ollama nickname generation failed. Ensure tinyllama is pulled and Ollama is running on port 11434.", exc);
+        } catch (OllamaBaseException | IOException | InterruptedException exc) {
+            return ollamaUnavailable("Ollama nickname generation failed.", exc);
         }
     }
 
