@@ -80,6 +80,10 @@ public class Player {
     @Column(name = "BBREFID")
     private String bbrefId;
 
+    // Generated nickname for the player; null until one has been generated.
+    @Column(name = "NICKNAME")
+    private String nickname;
+
     public Player() {}
 
     public String getPlayerId() {
@@ -272,5 +276,13 @@ public class Player {
 
     public void setBbrefId(String bbrefId) {
         this.bbrefId = bbrefId;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 }

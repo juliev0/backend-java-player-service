@@ -38,4 +38,10 @@ public class PlayerService {
         return player;
     }
 
+    // Stores the given nickname on the player and returns the saved player.
+    public Player saveNickname(Player player, String nickname) {
+        player.setNickname(nickname);
+        return playerRepository.save(player);
+    }
+
 }

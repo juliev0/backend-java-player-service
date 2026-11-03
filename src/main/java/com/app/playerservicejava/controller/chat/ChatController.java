@@ -53,7 +53,8 @@ public class ChatController {
     // Request body for nickname generation: identifies the player to generate a nickname for.
     public record NicknameRequest(String playerId) {}
 
-    // Looks up the player by id and returns a generated nickname based on the player's birth country.
+    // Looks up the player by id, generates a nickname based on the player's birth country,
+    // saves it on the player, and returns it.
     @PostMapping("/nickname")
     public ResponseEntity<?> nickname(@RequestBody NicknameRequest request) {
         // reject a missing player id
@@ -77,6 +78,9 @@ public class ChatController {
 
         try {
             String nickname = chatClientService.generateNickname(country.trim());
+
+            // persist the generated nickname on the player record
+            playerService.saveNickname(player.get(), nickname);
             return ResponseEntity.ok(Map.of(
                     "playerId", player.get().getPlayerId(),
                     "country", country.trim(),
