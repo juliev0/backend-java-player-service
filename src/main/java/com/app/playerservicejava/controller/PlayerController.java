@@ -2,6 +2,7 @@ package com.app.playerservicejava.controller;
 
 import com.app.playerservicejava.model.Player;
 import com.app.playerservicejava.model.Players;
+import com.app.playerservicejava.security.AuthGuard;
 import com.app.playerservicejava.service.PlayerService;
 import jakarta.annotation.Resource;
 import org.springframework.http.HttpStatus;
@@ -20,13 +21,26 @@ public class PlayerController {
     private PlayerService playerService;
 
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<Players> getPlayers() {
+    public ResponseEntity<?> getPlayers(@RequestHeader(value = "Authorization", required = false) String authorization) {
+        // reject the request early if the password is missing or wrong
+        Optional<ResponseEntity<Object>> rejection = AuthGuard.rejectIfUnauthorized(authorization);
+        if (rejection.isPresent()) {
+            return rejection.get();
+        }
+
         Players players = playerService.getPlayers();
         return ok(players);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Player> getPlayerById(@PathVariable("id") String id) {
+    public ResponseEntity<?> getPlayerById(@PathVariable("id") String id,
+                                           @RequestHeader(value = "Authorization", required = false) String authorization) {
+        // reject the request early if the password is missing or wrong
+        Optional<ResponseEntity<Object>> rejection = AuthGuard.rejectIfUnauthorized(authorization);
+        if (rejection.isPresent()) {
+            return rejection.get();
+        }
+
         Optional<Player> player = playerService.getPlayerById(id);
 
         if (player.isPresent()) {
